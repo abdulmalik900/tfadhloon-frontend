@@ -1,7 +1,7 @@
-import HomeScreen from '@/components/GameScreens/HomeScreen';
+import HomeMain from '@/components/HomeScreenUI/HomeMain';
 
 export default function Home() {
   return (
-    <HomeScreen />
+    <HomeMain />
   );
 }

@@ -1,5 +1,5 @@
-import ScoreboardScreen from '@/components/GameScreens/ScoreboardScreen';
+import ScoreboardMain from '@/components/ScoreboardScreenUI/ScoreboardMain';
 
 export default function ScoreboardPage() {
-  return <ScoreboardScreen />;
+  return <ScoreboardMain />;
 }
