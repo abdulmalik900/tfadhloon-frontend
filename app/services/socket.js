@@ -11,7 +11,7 @@ export function getSocket() {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 10,
-      timeout: 20000,
+      timeout: 10000, // As per backend documentation
       autoConnect: true,
       forceNew: false,
       upgrade: true
