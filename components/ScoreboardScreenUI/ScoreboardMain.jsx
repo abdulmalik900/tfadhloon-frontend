@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GameAPI from '@/app/services/GameApis';
-import getSocket from '@/app/services/socket';
+import { getSocket } from '@/app/services/socket';
 import { showNotification } from '@/components/SharedUI/GameNotifications';
 import ScoreboardUI from './ScoreboardUI';
 import ScoreboardActions from './ScoreboardActions';
@@ -24,25 +24,24 @@ export default function ScoreboardMain({ gameCode }) {
       fetchScoreboard();
     }
   }, [gameCode]);
-
   const setupSocketConnection = () => {
     const socket = getSocket();
     
-    socket.on('scoreboard-updated', (data) => {
+    socket.on('roundResults', (data) => {
       setScoreboard(data.scoreboard || []);
       setGameStats(data.stats);
       setCurrentRound(data.currentRound || 1);
       setTotalRounds(data.totalRounds || 5);
     });
 
-    socket.on('next-round', (data) => {
+    socket.on('roundStarted', (data) => {
       showNotification('Next round starting!', 'info', 2000);
       setTimeout(() => {
         router.push(`/game/${gameCode}/prediction`);
       }, 2000);
     });
 
-    socket.on('game-ended', (data) => {
+    socket.on('finalScores', (data) => {
       setIsGameComplete(true);
       showNotification('Game completed!', 'success', 2000);
       setTimeout(() => {
@@ -51,23 +50,22 @@ export default function ScoreboardMain({ gameCode }) {
     });
 
     return () => {
-      socket.off('scoreboard-updated');
-      socket.off('next-round');
-      socket.off('game-ended');
+      socket.off('roundResults');
+      socket.off('roundStarted');
+      socket.off('finalScores');
     };
   };
-
   const fetchScoreboard = async () => {
     try {
       setIsLoading(true);
-      const response = await GameAPI.getScoreboard(gameCode);
+      const response = await GameAPI.getLeaderboard(gameCode);
       
-      if (response.success) {
-        setScoreboard(response.scoreboard || []);
-        setGameStats(response.stats);
-        setCurrentRound(response.currentRound || 1);
-        setTotalRounds(response.totalRounds || 5);
-        setIsGameComplete(response.isComplete || false);
+      if (response.status === 'success') {
+        setScoreboard(response.data.leaderboard || []);
+        setGameStats(response.data.stats);
+        setCurrentRound(response.data.currentRound || 1);
+        setTotalRounds(response.data.totalRounds || 5);
+        setIsGameComplete(response.data.isComplete || false);
       } else {
         setError(response.message || 'Failed to load scoreboard');
       }
@@ -78,10 +76,15 @@ export default function ScoreboardMain({ gameCode }) {
       setIsLoading(false);
     }
   };
-
-  const handleNextRound = () => {
-    const socket = getSocket();
-    socket.emit('start-next-round', { gameCode });
+  const handleNextRound = async () => {
+    try {
+      const response = await GameAPI.completeScoring(gameCode);
+      if (response.status === 'success') {
+        showNotification('Moving to next round...', 'success', 2000);
+      }
+    } catch (err) {
+      console.error('Error starting next round:', err);
+    }
   };
 
   const handleViewResults = () => {
@@ -92,9 +95,18 @@ export default function ScoreboardMain({ gameCode }) {
     router.push(`/game/${gameCode}`);
   };
 
-  const handleEndGame = () => {
-    const socket = getSocket();
-    socket.emit('end-game', { gameCode });
+  const handleEndGame = async () => {
+    try {
+      const response = await GameAPI.completeGame(gameCode);
+      if (response.status === 'success') {
+        showNotification('Game completed!', 'success', 2000);
+        setTimeout(() => {
+          router.push(`/game/${gameCode}/final`);
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Error ending game:', err);
+    }
   };
 
   return (

@@ -14,11 +14,10 @@ export default function TurnAnnouncementUI({
 }) {
 
   if (isLoading) {
-    return (
-      <>
+    return (      <>
         <BackgroundAnimations />
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/20 text-center">
-          <div className="animate-spin text-4xl mb-4">🔄</div>
+          <div className="text-4xl mb-4">🔄</div>
           <p className="text-white text-lg">Preparing next round...</p>
         </div>
       </>

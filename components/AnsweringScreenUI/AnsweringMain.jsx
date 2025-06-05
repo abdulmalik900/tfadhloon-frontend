@@ -4,30 +4,31 @@ import { useRouter } from 'next/navigation';
 import GameAPI from '@/app/services/GameApis';
 import { getSocket } from '@/app/services/socket';
 import { showNotification } from '@/components/SharedUI/GameNotifications';
-import PredictionUI from './PredictionUI';
-import PredictionActions from './PredictionActions';
+import AnsweringUI from './AnsweringUI';
+import AnsweringActions from './AnsweringActions';
 
-export default function PredictionMain({ gameCode }) {
+export default function AnsweringMain({ gameCode }) {
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [playerPredictions, setPlayerPredictions] = useState([]);
-  const [myPrediction, setMyPrediction] = useState('');
+  const [playerAnswers, setPlayerAnswers] = useState([]);
+  const [myAnswer, setMyAnswer] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
   const [players, setPlayers] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [gamePhase, setGamePhase] = useState('prediction'); // prediction, waiting, results
+  const [predictions, setPredictions] = useState([]);
 
   // Timer effect
   useEffect(() => {
-    if (timeLeft > 0 && !isSubmitted && gamePhase === 'prediction') {
+    if (timeLeft > 0 && !isSubmitted) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !isSubmitted) {
-      handleSubmitPrediction(); // Auto-submit when time runs out
+      handleSubmitAnswer(); // Auto-submit when time runs out
     }
-  }, [timeLeft, isSubmitted, gamePhase]);
+  }, [timeLeft, isSubmitted]);
+
   // Socket setup
   useEffect(() => {
     if (gameCode) {
@@ -39,30 +40,16 @@ export default function PredictionMain({ gameCode }) {
   const setupSocketConnection = () => {
     const socket = getSocket();
     
-    socket.on('roundStarted', (data) => {
-      setCurrentQuestion(data.question);
-      setTimeLeft(data.predictionTimeLimit || 30);
-      setGamePhase('prediction');
-      setIsSubmitted(false);
-      setMyPrediction('');
-      setPlayerPredictions([]);
-    });
-
-    socket.on('predictionUpdate', (data) => {
-      setPlayerPredictions(prev => {
-        const updated = prev.filter(p => p.playerId !== data.playerId);
-        return [...updated, data];
-      });
-    });
-
     socket.on('answeringPhase', (data) => {
-      setGamePhase('waiting');
-      setPlayerPredictions(data.predictions || []);
-      showNotification('Prediction phase ended! Moving to answering phase...', 'info', 2000);
+      setCurrentQuestion(data.question);
+      setTimeLeft(data.answerTimeLimit || 30);
+      setPredictions(data.predictions || []);
+      setIsSubmitted(false);
+      setMyAnswer('');
+      setPlayerAnswers([]);
     });
 
     socket.on('roundResults', (data) => {
-      setGamePhase('results');
       router.push(`/game/${gameCode}/results`);
     });
 
@@ -71,13 +58,12 @@ export default function PredictionMain({ gameCode }) {
     });
 
     return () => {
-      socket.off('roundStarted');
-      socket.off('predictionUpdate');
       socket.off('answeringPhase');
       socket.off('roundResults');
       socket.off('finalScores');
     };
   };
+
   const fetchCurrentQuestion = async () => {
     try {
       setIsLoading(true);
@@ -87,6 +73,7 @@ export default function PredictionMain({ gameCode }) {
         setCurrentQuestion(response.data.question);
         setPlayers(response.data.players || []);
         setTimeLeft(response.data.timeLeft || 30);
+        setPredictions(response.data.predictions || []);
       } else {
         setError(response.message || 'Failed to load question');
       }
@@ -97,32 +84,33 @@ export default function PredictionMain({ gameCode }) {
       setIsLoading(false);
     }
   };
-  const handleSubmitPrediction = async () => {
-    if (!myPrediction.trim()) {
-      setError('Please enter a prediction');
+
+  const handleSubmitAnswer = async () => {
+    if (!myAnswer.trim()) {
+      setError('Please enter an answer');
       return;
     }
 
     try {
-      const response = await GameAPI.submitPrediction(gameCode, myPrediction.trim());
+      const response = await GameAPI.submitAnswer(gameCode, myAnswer.trim());
       
       if (response.status === 'success') {
         setIsSubmitted(true);
         setError('');
-        showNotification('Prediction submitted!', 'success', 2000);
+        showNotification('Answer submitted!', 'success', 2000);
         
         // Emit to socket using new event structure
         const socket = getSocket();
-        socket.emit('submitPrediction', {
+        socket.emit('submitAnswer', {
           gameCode,
-          prediction: myPrediction.trim()
+          answer: myAnswer.trim()
         });
       } else {
-        setError(response.message || 'Failed to submit prediction');
+        setError(response.message || 'Failed to submit answer');
       }
     } catch (err) {
-      setError('Failed to submit prediction. Please try again.');
-      console.error('Error submitting prediction:', err);
+      setError('Failed to submit answer. Please try again.');
+      console.error('Error submitting answer:', err);
     }
   };
 
@@ -131,27 +119,26 @@ export default function PredictionMain({ gameCode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-600 via-teal-600 to-blue-500 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        <PredictionUI
+        <AnsweringUI
           currentQuestion={currentQuestion}
-          myPrediction={myPrediction}
-          setMyPrediction={setMyPrediction}
+          myAnswer={myAnswer}
+          setMyAnswer={setMyAnswer}
           isSubmitted={isSubmitted}
           timeLeft={timeLeft}
-          playerPredictions={playerPredictions}
+          playerAnswers={playerAnswers}
           players={players}
+          predictions={predictions}
           error={error}
           isLoading={isLoading}
-          gamePhase={gamePhase}
         />
         
-        <PredictionActions
-          myPrediction={myPrediction}
+        <AnsweringActions
+          myAnswer={myAnswer}
           isSubmitted={isSubmitted}
           timeLeft={timeLeft}
-          gamePhase={gamePhase}
-          onSubmitPrediction={handleSubmitPrediction}
+          onSubmitAnswer={handleSubmitAnswer}
           onBackToLobby={handleBackToLobby}
         />
       </div>

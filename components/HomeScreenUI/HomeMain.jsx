@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import getSocket from '@/app/services/socket';
+import { getSocket } from '@/app/services/socket';
 import { showNotification } from '@/components/SharedUI/GameNotifications';
 import HomeUI from './HomeUI';
 import HomeActions from './HomeActions';

@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 export default function RealTimeStatus({ 
   connectionStatus, 
   playerCount = 0, 
-  maxPlayers = 4,
+  maxPlayers = 3,
   showPlayerCount = true,
-  className = ""
+  className = "",
+  players = []
 }) {
   const [pulseCount, setPulseCount] = useState(0);
 
@@ -35,7 +36,7 @@ export default function RealTimeStatus({
       case 'connected':
         return 'bg-green-400';
       case 'reconnecting':
-        return 'bg-yellow-400 animate-pulse';
+        return 'bg-yellow-400';
       case 'disconnected':
         return 'bg-red-400';
       default:
@@ -62,17 +63,20 @@ export default function RealTimeStatus({
       <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm border ${getStatusColor()}`}>
         <div className={`w-2 h-2 rounded-full mr-2 ${getStatusDot()}`}></div>
         {getStatusText()}
-      </div>
-
-      {/* Player Count with animation */}
-      {showPlayerCount && (
-        <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm bg-blue-500/20 text-blue-100 border border-blue-400/30 transition-all duration-300 ${
-          pulseCount > 0 ? 'animate-bounce' : ''
-        }`}>
+      </div>      {/* Player Count with animation */}      {showPlayerCount && (
+        <div className={`inline-flex items-center px-3 py-2 rounded-full text-sm bg-blue-500/20 text-blue-100 border border-blue-400/30 transition-all duration-300`}>
           <span className="mr-2">👥</span>
-          <span className="font-semibold">{playerCount}/{maxPlayers}</span>
-          {playerCount < maxPlayers && (
-            <div className="ml-2 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+          <span className="font-semibold">
+            {players && players.some(p => p.isHost) ? 
+              `Host + ${players.filter(p => !p.isHost).length}/3` : 
+              `${playerCount}/${maxPlayers}`}
+          </span>
+          {(players ? 
+              players.some(p => p.isHost) ? 
+                players.filter(p => !p.isHost).length < (maxPlayers - 1) : 
+                playerCount < maxPlayers
+              : playerCount < maxPlayers) && (
+            <div className="ml-2 w-2 h-2 bg-blue-400 rounded-full"></div>
           )}
         </div>
       )}

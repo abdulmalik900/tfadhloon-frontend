@@ -19,7 +19,7 @@ export default function PredictionUI({
       <>
         <BackgroundAnimations />
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/20 text-center">
-          <div className="animate-spin text-4xl mb-4">🔄</div>
+          <div className="text-4xl mb-4">🔄</div>
           <p className="text-white text-lg">Loading question...</p>
         </div>
       </>
@@ -69,7 +69,7 @@ export default function PredictionUI({
 
           {/* Loading Animation */}
           <div className="text-center">
-            <div className="animate-bounce text-2xl mb-2">🎯</div>
+            <div className="text-2xl mb-2">🎯</div>
             <p className="text-white/60 text-sm">Calculating results...</p>
           </div>
         </div>

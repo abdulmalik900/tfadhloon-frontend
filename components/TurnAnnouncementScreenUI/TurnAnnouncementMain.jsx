@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GameAPI from '@/app/services/GameApis';
-import getSocket from '@/app/services/socket';
+import { getSocket } from '@/app/services/socket';
 import { showNotification } from '@/components/SharedUI/GameNotifications';
 import TurnAnnouncementUI from './TurnAnnouncementUI';
 import TurnAnnouncementActions from './TurnAnnouncementActions';
@@ -37,47 +37,46 @@ export default function TurnAnnouncementMain({ gameCode }) {
       fetchTurnData();
     }
   }, [gameCode]);
-
   const setupSocketConnection = () => {
     const socket = getSocket();
     
-    socket.on('turn-announcement', (data) => {
+    socket.on('roundStarted', (data) => {
       setCurrentPlayer(data.currentPlayer);
-      setNextQuestion(data.nextQuestion);
-      setCurrentRound(data.currentRound || 1);
+      setNextQuestion(data.question);
+      setCurrentRound(data.roundNumber || 1);
       setTotalRounds(data.totalRounds || 5);
       setIsMyTurn(data.isMyTurn || false);
       setCountdown(5);
     });
 
-    socket.on('round-starting', () => {
-      showNotification('Round starting!', 'info', 2000);
+    socket.on('gameStarted', () => {
+      showNotification('Game starting!', 'info', 2000);
       router.push(`/game/${gameCode}/prediction`);
     });
 
-    socket.on('game-ended', () => {
+    socket.on('finalScores', () => {
       router.push(`/game/${gameCode}/final`);
     });
 
     return () => {
-      socket.off('turn-announcement');
-      socket.off('round-starting');
-      socket.off('game-ended');
+      socket.off('roundStarted');
+      socket.off('gameStarted');
+      socket.off('finalScores');
     };
   };
-
   const fetchTurnData = async () => {
     try {
       setIsLoading(true);
-      const response = await GameAPI.getTurnData(gameCode);
+      const response = await GameAPI.getGameState(gameCode);
       
-      if (response.success) {
-        setCurrentPlayer(response.currentPlayer);
-        setNextQuestion(response.nextQuestion);
-        setCurrentRound(response.currentRound || 1);
-        setTotalRounds(response.totalRounds || 5);
-        setIsMyTurn(response.isMyTurn || false);
-        setAllPlayers(response.players || []);
+      if (response.status === 'success') {
+        const gameState = response.data;
+        setCurrentPlayer(gameState.currentPlayer);
+        setNextQuestion(gameState.currentQuestion);
+        setCurrentRound(gameState.currentRound || 1);
+        setTotalRounds(gameState.totalRounds || 5);
+        setIsMyTurn(gameState.isMyTurn || false);
+        setAllPlayers(gameState.players || []);
       } else {
         setError(response.message || 'Failed to load turn data');
       }

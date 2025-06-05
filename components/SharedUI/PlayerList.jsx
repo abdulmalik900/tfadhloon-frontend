@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 const PlayerList = ({ 
   players = [], 
   currentPlayerId = null, 
-  maxPlayers = 4, 
+  maxPlayers = 3, 
   showHostControls = false,
   onRemovePlayer = null,
   showPlayerStatus = true,
@@ -50,9 +50,7 @@ const PlayerList = ({
     if (player.status === 'disconnected') return 'OFFLINE';
     return 'ONLINE';
   };
-
   const getPlayerCardClass = (player) => {
-    const isAnimating = animatingPlayers.has(player.id);
     let baseClass = 'rounded-xl p-4 flex items-center justify-between transition-all duration-500 transform';
     
     if (compact) {
@@ -60,37 +58,32 @@ const PlayerList = ({
     }
 
     if (player.isHost) {
-      return `${baseClass} bg-gradient-to-r from-yellow-400/30 to-orange-400/30 border-2 border-yellow-400/50 shadow-lg ${
-        isAnimating ? 'animate-bounce scale-105' : ''
-      }`;
+      return `${baseClass} bg-gradient-to-r from-yellow-400/30 to-orange-400/30 border-2 border-yellow-400/50 shadow-lg`;
     }
 
     if (player.id === currentPlayerId) {
-      return `${baseClass} bg-gradient-to-r from-blue-400/30 to-purple-400/30 border-2 border-blue-400/50 ${
-        isAnimating ? 'animate-bounce scale-105' : ''
-      }`;
+      return `${baseClass} bg-gradient-to-r from-blue-400/30 to-purple-400/30 border-2 border-blue-400/50`;
     }
 
     if (player.status === 'disconnected') {
-      return `${baseClass} bg-white/10 opacity-60 border border-red-400/50 ${
-        isAnimating ? 'animate-bounce scale-105' : ''
-      }`;
+      return `${baseClass} bg-white/10 opacity-60 border border-red-400/50`;
     }
 
-    return `${baseClass} bg-white/20 backdrop-blur-sm border border-white/20 ${
-      isAnimating ? 'animate-bounce scale-105' : ''
-    }`;
+    return `${baseClass} bg-white/20 backdrop-blur-sm border border-white/20`;
   };
 
   return (
-    <div className={`${compact ? 'space-y-2' : 'space-y-3'}`}>
-      <div className="flex items-center justify-between mb-4">
+    <div className={`${compact ? 'space-y-2' : 'space-y-3'}`}>      <div className="flex items-center justify-between mb-4">
         <h3 className="text-white font-semibold text-lg">
-          Players ({players.length}/{maxPlayers})
+          {players.some(p => p.isHost) ? (
+            <>Host + Players ({players.filter(p => !p.isHost).length}/{maxPlayers - 1})</>
+          ) : (
+            <>Players ({players.length}/{maxPlayers})</>
+          )}
         </h3>
         {showPlayerStatus && (
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
             <span className="text-white/80 text-sm">Live</span>
           </div>
         )}
@@ -162,42 +155,56 @@ const PlayerList = ({
                 >
                   ×
                 </button>
-              )}
-
-              {/* Connection pulse */}
+              )}              {/* Connection indicator */}
               {player.status !== 'disconnected' && (
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
               )}
             </div>
           </div>
-        ))}
-
-        {/* Empty slots */}
-        {players.length < maxPlayers && Array.from({ length: maxPlayers - players.length }).map((_, index) => (
-          <div 
-            key={`empty-${index}`} 
-            className={`${compact ? 'rounded-lg p-3' : 'rounded-xl p-4'} bg-white/10 border-2 border-dashed border-white/30 flex items-center justify-center`}
-          >
-            <div className="text-center">
-              <div className="text-2xl mb-1">👤</div>
-              <span className="text-white/50 text-sm">Waiting for player...</span>
+        ))}        {/* Empty slots - adjust count based on whether host is present */}
+        {(() => {
+          const hostPresent = players.some(p => p.isHost);
+          const effectiveMaxPlayers = hostPresent ? maxPlayers - 1 : maxPlayers;
+          const regularPlayerCount = players.filter(p => !p.isHost).length;
+          const emptySlotCount = hostPresent 
+            ? effectiveMaxPlayers - regularPlayerCount 
+            : maxPlayers - players.length;
+          
+          return Array.from({ length: Math.max(0, emptySlotCount) }).map((_, index) => (
+            <div 
+              key={`empty-${index}`} 
+              className={`${compact ? 'rounded-lg p-3' : 'rounded-xl p-4'} bg-white/10 border-2 border-dashed border-white/30 flex items-center justify-center`}
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-1">👤</div>
+                <span className="text-white/50 text-sm">Waiting for player...</span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Player count info */}
+          ));
+        })()}
+      </div>      {/* Player count info - adjusted for host separation */}
       {!compact && (
         <div className="mt-4 text-center">
-          {players.length < maxPlayers ? (
-            <p className="text-white/70 text-sm">
-              Need {maxPlayers - players.length} more player{maxPlayers - players.length !== 1 ? 's' : ''} to start
-            </p>
-          ) : (
-            <p className="text-green-300 text-sm font-medium">
-              🎉 All players ready!
-            </p>
-          )}
+          {(() => {
+            const hostPresent = players.some(p => p.isHost);
+            const effectiveMaxPlayers = hostPresent ? maxPlayers - 1 : maxPlayers;
+            const regularPlayerCount = players.filter(p => !p.isHost).length;
+            const neededPlayers = effectiveMaxPlayers - regularPlayerCount;
+            
+            if (neededPlayers > 0) {
+              return (
+                <p className="text-white/70 text-sm">
+                  Need {neededPlayers} more player{neededPlayers !== 1 ? 's' : ''} to start
+                </p>
+              );
+            } else {
+              return (
+                <p className="text-green-300 text-sm font-medium">
+                  🎉 All players ready!
+                </p>
+              );
+            }
+          })()}
         </div>
       )}
     </div>

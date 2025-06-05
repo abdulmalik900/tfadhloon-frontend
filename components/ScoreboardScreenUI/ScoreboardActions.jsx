@@ -52,7 +52,7 @@ export default function ScoreboardActions({
       >
         {isProcessing ? (
           <div className="flex items-center justify-center space-x-2">
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-orange-600 border-t-transparent"></div>
+            <div className="rounded-full h-5 w-5 border-2 border-orange-600 border-t-transparent"></div>
             <span>Processing...</span>
           </div>
         ) : isLastCycle ? (
@@ -82,16 +82,15 @@ export default function ScoreboardActions({
             {isLastCycle 
               ? 'You can end the game or start a new one'
               : 'Click the button above to continue to the next cycle'
-            }
-          </p>
+            }        </p>
         </div>
       )}
 
-      {/* Floating decorative elements */}
-      <div className="absolute top-20 left-10 text-4xl animate-pulse pointer-events-none">🎊</div>
-      <div className="absolute top-32 right-16 text-3xl animate-bounce pointer-events-none" style={{ animationDelay: '0.5s' }}>🎈</div>
-      <div className="absolute bottom-32 left-8 text-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }}>✨</div>
-      <div className="absolute bottom-48 right-12 text-4xl animate-bounce pointer-events-none" style={{ animationDelay: '1.5s' }}>🌟</div>
+      {/* Simple decorative elements */}
+      <div className="absolute top-20 left-10 text-4xl pointer-events-none">🎊</div>
+      <div className="absolute top-32 right-16 text-3xl pointer-events-none">🎈</div>
+      <div className="absolute bottom-32 left-8 text-3xl pointer-events-none">✨</div>
+      <div className="absolute bottom-48 right-12 text-4xl pointer-events-none">🌟</div>
     </div>
   );
 }

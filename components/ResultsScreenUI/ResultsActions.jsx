@@ -15,7 +15,7 @@ const ResultsActions = ({
     return (
       <div className={`p-6 ${className}`}>
         <div className="text-center">
-          <div className="animate-pulse text-white/60 text-sm">
+          <div className="text-white/60 text-sm">
             Calculating results...
           </div>
         </div>
@@ -41,7 +41,7 @@ const ResultsActions = ({
       {/* Next Button */}
       <button
         onClick={onNext}
-        className="w-full bg-white text-purple-600 font-bold text-xl py-4 rounded-3xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200 animate-bounce-in"
+        className="w-full bg-white text-purple-600 font-bold text-xl py-4 rounded-3xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
         style={{ animationDelay: '1s' }}
       >
         {isLastRound ? (

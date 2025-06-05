@@ -23,13 +23,14 @@ const GameNotifications = ({ className = '' }) => {
   const removeNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
-
   // Make addNotification available globally for other components
   useEffect(() => {
-    window.showGameNotification = addNotification;
-    return () => {
-      delete window.showGameNotification;
-    };
+    if (typeof window !== 'undefined') {
+      window.showGameNotification = addNotification;
+      return () => {
+        delete window.showGameNotification;
+      };
+    }
   }, []);
 
   const getNotificationStyle = (type) => {
@@ -79,7 +80,7 @@ const GameNotifications = ({ className = '' }) => {
       {notifications.map((notification, index) => (
         <div
           key={notification.id}
-          className={`${getNotificationStyle(notification.type)} animate-slide-in-right`}
+          className={`${getNotificationStyle(notification.type)}`}
           style={{
             animationDelay: `${index * 100}ms`
           }}

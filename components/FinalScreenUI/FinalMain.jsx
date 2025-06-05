@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GameAPI from '@/app/services/GameApis';
-import getSocket from '@/app/services/socket';
+import { getSocket } from '@/app/services/socket';
 import { showNotification } from '@/components/SharedUI/GameNotifications';
 import FinalUI from './FinalUI';
 import FinalActions from './FinalActions';
@@ -34,38 +34,38 @@ export default function FinalMain({ gameCode }) {
       return () => clearTimeout(timer);
     }
   }, [winner]);
-
   const setupSocketConnection = () => {
     const socket = getSocket();
     
-    socket.on('game-ended', (data) => {
+    socket.on('finalScores', (data) => {
       setFinalResults(data.results);
-      setFinalScoreboard(data.scoreboard || []);
+      setFinalScoreboard(data.leaderboard || []);
       setWinner(data.winner);
       setGameStats(data.stats);
     });
 
-    socket.on('player-left', (data) => {
-      showNotification(`${data.playerName} left the game`, 'player-leave', 3000);
+    socket.on('playerDisconnected', (data) => {
+      if (data.leftPlayer) {
+        showNotification(`${data.leftPlayer.name} left the game`, 'info', 3000);
+      }
     });
 
     return () => {
-      socket.off('game-ended');
-      socket.off('player-left');
+      socket.off('finalScores');
+      socket.off('playerDisconnected');
     };
   };
-
   const fetchFinalResults = async () => {
     try {
       setIsLoading(true);
-      const response = await GameAPI.getFinalResults(gameCode);
+      const response = await GameAPI.getLeaderboard(gameCode);
       
-      if (response.success) {
-        setFinalResults(response.results);
-        setFinalScoreboard(response.scoreboard || []);
-        setWinner(response.winner);
-        setGameStats(response.stats);
-        setPlayerStats(response.playerStats || []);
+      if (response.status === 'success') {
+        setFinalResults(response.data.results);
+        setFinalScoreboard(response.data.leaderboard || []);
+        setWinner(response.data.winner);
+        setGameStats(response.data.stats);
+        setPlayerStats(response.data.playerStats || []);
       } else {
         setError(response.message || 'Failed to load final results');
       }

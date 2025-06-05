@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-export default function PlayerActivity({ players = [], maxPlayers = 4 }) {
+export default function PlayerActivity({ players = [], maxPlayers = 3 }) {
   const [recentActivity, setRecentActivity] = useState([]);
   const [previousPlayerCount, setPreviousPlayerCount] = useState(0);
 
@@ -58,7 +58,7 @@ export default function PlayerActivity({ players = [], maxPlayers = 4 }) {
         {recentActivity.map((activity) => (
           <div
             key={activity.id}
-            className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 animate-slide-down"
+            className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
