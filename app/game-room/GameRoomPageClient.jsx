@@ -1,47 +1,52 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import GameRoomMain from '@/components/GameRoomUI/GameRoomMain';
-import { getSocket } from '@/app/services/socket';
-import { useLocalStorageState } from '@/app/utils/localStorage';
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import GameRoomMain from "@/components/GameRoomUI/GameRoomMain";
+import { getSocket, joinRoom } from "@/app/services/socket";
+import { useLocalStorageState } from "@/app/utils/localStorage";
 
 export default function GameRoomPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const gameCode = searchParams.get('code') || '';
+  const gameCode = searchParams.get("code") || "";
 
   const [players, setPlayers] = useState([]);
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [connectionStatus, setConnectionStatus] = useState("connecting");
   const [gameStarted, setGameStarted] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const [playerId, setPlayerId] = useLocalStorageState('playerId');
-  const [playerName, setPlayerName] = useLocalStorageState('playerName');
+  const [playerId, setPlayerId] = useLocalStorageState("playerId");
+  const [playerName, setPlayerName] = useLocalStorageState("playerName");
 
   useEffect(() => {
     if (!gameCode) {
-      router.push('/join-game');
+      router.push("/join-game");
       return;
     }
 
     const socket = getSocket();
-
     const handleConnect = () => {
-      setConnectionStatus('connected');
-      socket.emit('rejoin-game', { gameCode, playerId, playerName });
+      setConnectionStatus("connected");
+      // Use joinRoom instead of rejoin-game to ensure all players get notified
+      joinRoom(gameCode, playerId, playerName);
     };
 
     const handleDisconnect = () => {
-      setConnectionStatus('disconnected');
+      setConnectionStatus("disconnected");
     };
 
     const handleReconnecting = () => {
-      setConnectionStatus('reconnecting');
+      setConnectionStatus("reconnecting");
     };
-
     const handlePlayerUpdate = (updatedPlayers) => {
       setPlayers(updatedPlayers);
+    };
+
+    const handleRoomUpdate = (data) => {
+      if (data.players) {
+        setPlayers(data.players);
+      }
     };
 
     const handleGameStart = () => {
@@ -54,30 +59,30 @@ export default function GameRoomPageClient() {
     const handleError = (errorMsg) => {
       setError(errorMsg);
       setTimeout(() => {
-        router.push('/join-game');
+        router.push("/join-game");
       }, 3000);
-    };
-
-    // Set up event listeners
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    socket.on('reconnecting', handleReconnecting);
-    socket.on('player-update', handlePlayerUpdate);
-    socket.on('game-start', handleGameStart);
-    socket.on('game-error', handleError);
-
-    // Clean up
+    }; // Set up event listeners
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("reconnecting", handleReconnecting);
+    socket.on("player-update", handlePlayerUpdate);
+    socket.on("roomUpdate", handleRoomUpdate);
+    socket.on("game-start", handleGameStart);
+    socket.on("gameStarted", handleGameStart);
+    socket.on("game-error", handleError); // Clean up
     return () => {
-      socket.off('connect', handleConnect);
-      socket.off('disconnect', handleDisconnect);
-      socket.off('reconnecting', handleReconnecting);
-      socket.off('player-update', handlePlayerUpdate);
-      socket.off('game-start', handleGameStart);
-      socket.off('game-error', handleError);
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("reconnecting", handleReconnecting);
+      socket.off("player-update", handlePlayerUpdate);
+      socket.off("roomUpdate", handleRoomUpdate);
+      socket.off("game-start", handleGameStart);
+      socket.off("gameStarted", handleGameStart);
+      socket.off("game-error", handleError);
     };
   }, [gameCode, playerId, playerName, router]);
 
-  const isHost = players.some(p => p.id === playerId && p.isHost);
+  const isHost = players.some((p) => p.id === playerId && p.isHost);
 
   if (error) {
     return (
